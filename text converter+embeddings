@@ -1,0 +1,88 @@
+import requests
+from bs4 import BeautifulSoup
+
+
+from google.colab import drive
+drive.mount('/content/gdrive')
+
+
+import pandas as pd
+
+
+# DON'T RUN THIS MORE THAN ONCE
+df = pd.DataFrame(columns=['title', 'heading', 'content', 'tokens'])
+
+
+def remove_text_between(doc, start_str, end_str):
+    start_pos = doc.find(start_str)
+    end_pos = doc.find(end_str)
+
+    if start_pos == -1 or end_pos == -1:
+        return doc
+
+    return doc[:start_pos] + '' + doc[end_pos+len(end_str):]
+    
+    # Insert URL
+url = "https://drive.google.com/drive/folders/15gs8Kn9ChccYZDgRBWACkQdw-ArkyDBx"
+response = requests.get(url)
+
+
+soup = BeautifulSoup(response.content, "html.parser")
+text = soup.get_text()
+text = text.strip()
+
+
+# see where text should be edited
+print(text)
+
+
+# Remove Text before this
+start_pos = text.find("50+ most ")
+# Remove Text after this
+end_pos = text.find("questions for us?")
+
+# Extract the desired text
+desired_text = text[start_pos:end_pos]
+print(desired_text)
+
+
+document = desired_text
+start_string = "  Computer Science MCQ"
+end_string = "with both my previous experiences and my"
+desired_text = remove_text_between(document, start_string, end_string)
+
+print(desired_text)
+
+
+tokens = desired_text.split()
+print(len(tokens))
+
+
+# Add Content to the dataframe if Link DID Work
+
+title = "Interview_Questions"
+heading = "Your 2023 Guide to the Most Common Interview Questions and Answers"
+content = desired_text
+tokens = len(content.split())
+df = df.append({'title': title, 'heading': heading, 'content': content, 'tokens': tokens}, ignore_index=True)
+
+
+# Add Content to the dataframe if Link DID NOT Work
+
+title = "Interview_Answers"
+heading = "DATA ANALYTICS INTERVIEW QUESTIONS AND ANSWERS"
+
+with open('/content/gdrive/MyDrive/Kaggle 4.txt', 'r') as f:
+    content = f.read()
+tokens = len(content.split())
+df = df.append({'title': title, 'heading': heading, 'content': content, 'tokens': tokens}, ignore_index=True)
+
+
+df.to_csv('dataframe_feedback.csv', index=False)
+
+# Download the CSV file to the local machine
+from google.colab import files
+files.download('dataframe_feedback.csv')
+
+
+display(df)
